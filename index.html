@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCM流媒体播放器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        textarea,
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        audio {
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        textarea {
+        width: 100%;
+        height: 100px; /* 设置固定高度 */
+        padding: 10px;
+        margin: 5px 0 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        resize: none; /* 禁止用户调整大小 */
+    }
+    </style>
+</head>
+
+<body>
+    <h1>文本转语音</h1>
+    <form onsubmit="generateAudio(event);">
+        <label for="ttsText">合成文本：</label>
+        <textarea id="ttsText" required></textarea>
+
+        <label for="instructText">阅读风格：</label>
+        <input type="text" id="instructText" value="小猪佩奇的风格朗读">
+
+        <label for="seed">随机种子：</label>
+        <input type="number" id="seed" value="0">
+
+        <!-- <label for="stream">流式推理：</label>
+        <input type="checkbox" id="stream"> -->
+
+        <button type="submit">生成音频</button>
+    </form>
+
+
+
+    <script>
+        async function generateAudio(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const ttsText = form.ttsText.value;
+            const instructText = form.instructText.value;
+            const seed = form.seed.value;
+            const stream = true;
+            const speed = '1.0';
+
+            const data = {
+                tts_text: ttsText,
+                instruct_text: instructText,
+                mode: 'instruct',
+                seed: seed,
+                stream: stream,
+                speed: speed
+            };
+
+            console.log("按下按钮");
+            try {
+                const response = await fetch('http://10.10.6.111:8000/generate-audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const reader = response.body.getReader();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const sampleRate = 24000;
+                let audioBufferQueue = [];
+                let source;
+                let isPlaying = false;
+                let leftover = new Uint8Array(0);
+
+                function processBuffer() {
+                    if (isPlaying || !audioBufferQueue.length) return;
+
+                    const tmpBufQueue = audioBufferQueue;
+                    audioBufferQueue = [];
+                    const totalLength = tmpBufQueue.reduce((acc, chunk) => acc + chunk.length, 0);
+                    const audioBuffer = audioContext.createBuffer(1, totalLength, sampleRate);
+                    const combinedArray = new Float32Array(totalLength);
+                    let offset = 0;
+
+                    while (tmpBufQueue.length) {
+                        const chunk = tmpBufQueue.shift();
+                        combinedArray.set(chunk, offset);
+                        offset += chunk.length;
+                    }
+
+                    audioBuffer.copyToChannel(combinedArray, 0);
+
+                    source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioContext.destination);
+                    source.onended = () => {
+                        isPlaying = false;
+                        if (audioBufferQueue.length > 0) {
+                            processBuffer();
+                        }
+                    };
+                    source.start();
+                    isPlaying = true;
+                }
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const combinedValue = new Uint8Array(leftover.length + value.length);
+                    combinedValue.set(leftover);
+                    combinedValue.set(value, leftover.length);
+
+                    const byteLength = combinedValue.byteLength;
+                    const remainder = byteLength % 2; // 如果是 16 位 PCM，则对齐到最近的 2 的倍数
+                    const validLength = byteLength - remainder;
+
+                    const validData = combinedValue.slice(0, validLength);
+                    leftover = combinedValue.slice(validLength);
+
+                    const int16Array = new Int16Array(validData.buffer);
+                    const float32Array = new Float32Array(int16Array.length);
+
+                    // Normalize to -1.0 to 1.0
+                    for (let i = 0; i < int16Array.length; i++) {
+                        float32Array[i] = int16Array[i] / 32768; // 转换到 Float32
+                    }
+
+                    audioBufferQueue.push(float32Array);
+                    processBuffer();
+                }
+            } catch (error) {
+                console.error('生成音频时发生错误:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
