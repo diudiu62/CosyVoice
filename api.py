@@ -67,7 +67,8 @@ active_connections = set()
 
 async def inference_audio(request: AudioRequest):
     set_all_random_seed(request.seed)
-    prompt_speech_16k = load_wav(request.prompt_voice, 16000) if request.prompt_voice else None
+    if request.prompt_voice is not None:
+        prompt_speech_16k = load_wav(request.prompt_voice, 16000) if request.prompt_voice else None
 
     if request.mode == 'zero_shot':
         return await asyncio.to_thread(cosyvoice.inference_zero_shot, request.tts_text, request.prompt_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
