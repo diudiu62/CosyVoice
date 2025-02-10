@@ -14,20 +14,13 @@ import numpy as np
 import torch
 import librosa
 from cosyvoice.cli.cosyvoice import CosyVoice2
-from cosyvoice.utils.file_utils import load_wav, logging
+from cosyvoice.utils.file_utils import load_wav
 from cosyvoice.utils.common import set_all_random_seed
 import torchaudio
 
 
-# 预加载示例音频
-# prompt_speech_16k = load_wav('audio/客服/正常#zh#哦，就想改个流量更多一些的，是吧？.wav', 16000)
-
-
 # 定义音频请求的队列
 audio_request_queue = asyncio.Queue()
-
-
-
 
 # FastAPI实例
 app = FastAPI()
@@ -72,20 +65,22 @@ def postprocess(speech, top_db=60, hop_length=220, win_length=440):
 # 用于存储活跃的 WebSocket 连接
 active_connections = set()
 
-# 音频生成函数（流式输出）
-async def generate_audio_stream(request: AudioRequest):
+async def inference_audio(request: AudioRequest):
     set_all_random_seed(request.seed)
-    prompt_speech_16k = load_wav(request.prompt_voice, 16000)
+    prompt_speech_16k = load_wav(request.prompt_voice, 16000) if request.prompt_voice else None
 
-    # 根据模式选择推理方法
     if request.mode == 'zero_shot':
-        result = await asyncio.to_thread(cosyvoice.inference_zero_shot, request.tts_text, request.prompt_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
+        return await asyncio.to_thread(cosyvoice.inference_zero_shot, request.tts_text, request.prompt_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
     elif request.mode == 'instruct':
-        result = await asyncio.to_thread(cosyvoice.inference_instruct2, request.tts_text, request.instruct_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
+        return await asyncio.to_thread(cosyvoice.inference_instruct2, request.tts_text, request.instruct_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
     elif request.mode == 'sft':
-        result = await asyncio.to_thread(cosyvoice.inference_sft, request.tts_text, request.sft_dropdown, stream=request.stream, speed=request.speed)
+        return await asyncio.to_thread(cosyvoice.inference_sft, request.tts_text, request.sft_dropdown, stream=request.stream, speed=request.speed)
     else:
         raise HTTPException(status_code=400, detail="Invalid mode")
+
+# 音频生成函数（流式输出）
+async def generate_audio_stream(request: AudioRequest):
+    result = await inference_audio(request)
 
     if result is None:
         raise HTTPException(status_code=500, detail="Failed to generate audio")
@@ -98,19 +93,7 @@ async def generate_audio_stream(request: AudioRequest):
 
 # 音频生成函数（非流式输出）
 async def generate_audio_buffer(request: AudioRequest):
-    set_all_random_seed(request.seed)
-    if request.prompt_voice is not None:
-        prompt_speech_16k = load_wav(request.prompt_voice, 16000)
-
-    # 根据模式选择推理方法
-    if request.mode == 'zero_shot':
-        result = await asyncio.to_thread(cosyvoice.inference_zero_shot, request.tts_text, request.prompt_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
-    elif request.mode == 'instruct':
-        result = await asyncio.to_thread(cosyvoice.inference_instruct2, request.tts_text, request.instruct_text, prompt_speech_16k, stream=request.stream, speed=request.speed)
-    elif request.mode == 'sft':
-        result = await asyncio.to_thread(cosyvoice.inference_sft, request.tts_text, request.sft_dropdown, stream=request.stream, speed=request.speed)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid mode")
+    result = await inference_audio(request)
 
     if result is None:
         raise HTTPException(status_code=500, detail="Failed to generate audio")
@@ -160,7 +143,7 @@ async def send_audio_to_connections(request: AudioRequest):
     connections_copy = list(active_connections)
     for connection in connections_copy:
         try:
-            async for audio_bytes in generate_audio(request):
+            async for audio_bytes in generate_audio_stream(request):
                 await connection.send_bytes(audio_bytes)
         except Exception as e:
             print(f"在处理连接时发生错误: {e}")
@@ -207,6 +190,7 @@ if __name__ == "__main__":
     # 初始化CosyVoice模型
 
     cosyvoice = CosyVoice2(args.model_dir, load_jit=False, load_trt=True, fp16=False) 
+    
     # 启动FastAPI
     uvicorn.run(app, host='0.0.0.0', port=50000)
 
