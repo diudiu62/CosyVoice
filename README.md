@@ -1,6 +1,9 @@
 [![SVG Banners](https://svg-banners.vercel.app/api?type=origin&text1=CosyVoice🤠&text2=Text-to-Speech%20💖%20Large%20Language%20Model&width=800&height=210)](https://github.com/Akshay090/svg-banners)
 
 ## 👉🏻 CosyVoice 👈🏻
+
+**CosyVoice 3.0**: [Demos](https://funaudiollm.github.io/cosyvoice3/); [Paper](https://arxiv.org/abs/2505.17589); [CV3-Eval](https://github.com/FunAudioLLM/CV3-Eval)
+
 **CosyVoice 2.0**: [Demos](https://funaudiollm.github.io/cosyvoice2/); [Paper](https://arxiv.org/abs/2412.10117); [Modelscope](https://www.modelscope.cn/studios/iic/CosyVoice2-0.5B); [HuggingFace](https://huggingface.co/spaces/FunAudioLLM/CosyVoice2-0.5B)
 
 **CosyVoice 1.0**: [Demos](https://fun-audio-llm.github.io); [Paper](https://funaudiollm.github.io/pdf/CosyVoice_v1.pdf); [Modelscope](https://www.modelscope.cn/studios/iic/CosyVoice-300M)
@@ -26,6 +29,18 @@
 
 ## Roadmap
 
+- [x] 2025/08
+
+    - [x] Thanks to the contribution from NVIDIA Yuekai Zhang, add triton trtllm runtime support and cosyvoice2 grpo training support
+
+- [x] 2025/07
+
+    - [x] release cosyvoice 3.0 eval set
+
+- [x] 2025/05
+
+    - [x] add cosyvoice 2.0 vllm support
+
 - [x] 2024/12
 
     - [x] 25hz cosyvoice 2.0 released
@@ -49,34 +64,32 @@
 
 ## Install
 
-**Clone and install**
+### Clone and install
 
 - Clone the repo
-``` sh
-git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
-# If you failed to clone submodule due to network failures, please run following command until success
-cd CosyVoice
-git submodule update --init --recursive
-```
+    ``` sh
+    git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+    # If you failed to clone the submodule due to network failures, please run the following command until success
+    cd CosyVoice
+    git submodule update --init --recursive
+    ```
 
 - Install Conda: please see https://docs.conda.io/en/latest/miniconda.html
 - Create Conda env:
 
-``` sh
-conda create -n cosyvoice -y python=3.10
-conda activate cosyvoice
-# pynini is required by WeTextProcessing, use conda to install it as it can be executed on all platform.
-conda install -y -c conda-forge pynini==2.1.5
-pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+    ``` sh
+    conda create -n cosyvoice -y python=3.10
+    conda activate cosyvoice
+    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
 
-# If you encounter sox compatibility issues
-# ubuntu
-sudo apt-get install sox libsox-dev
-# centos
-sudo yum install sox sox-devel
-```
+    # If you encounter sox compatibility issues
+    # ubuntu
+    sudo apt-get install sox libsox-dev
+    # centos
+    sudo yum install sox sox-devel
+    ```
 
-**Model download**
+### Model download
 
 We strongly recommend that you download our pretrained `CosyVoice2-0.5B` `CosyVoice-300M` `CosyVoice-300M-SFT` `CosyVoice-300M-Instruct` model and `CosyVoice-ttsfrd` resource.
 
@@ -85,7 +98,6 @@ We strongly recommend that you download our pretrained `CosyVoice2-0.5B` `CosyVo
 from modelscope import snapshot_download
 snapshot_download('iic/CosyVoice2-0.5B', local_dir='pretrained_models/CosyVoice2-0.5B')
 snapshot_download('iic/CosyVoice-300M', local_dir='pretrained_models/CosyVoice-300M')
-snapshot_download('iic/CosyVoice-300M-25Hz', local_dir='pretrained_models/CosyVoice-300M-25Hz')
 snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')
 snapshot_download('iic/CosyVoice-300M-Instruct', local_dir='pretrained_models/CosyVoice-300M-Instruct')
 snapshot_download('iic/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice-ttsfrd')
@@ -96,15 +108,14 @@ snapshot_download('iic/CosyVoice-ttsfrd', local_dir='pretrained_models/CosyVoice
 mkdir -p pretrained_models
 git clone https://www.modelscope.cn/iic/CosyVoice2-0.5B.git pretrained_models/CosyVoice2-0.5B
 git clone https://www.modelscope.cn/iic/CosyVoice-300M.git pretrained_models/CosyVoice-300M
-git clone https://www.modelscope.cn/iic/CosyVoice-300M-25Hz.git pretrained_models/CosyVoice-300M-25Hz
 git clone https://www.modelscope.cn/iic/CosyVoice-300M-SFT.git pretrained_models/CosyVoice-300M-SFT
 git clone https://www.modelscope.cn/iic/CosyVoice-300M-Instruct.git pretrained_models/CosyVoice-300M-Instruct
 git clone https://www.modelscope.cn/iic/CosyVoice-ttsfrd.git pretrained_models/CosyVoice-ttsfrd
 ```
 
-Optionally, you can unzip `ttsfrd` resouce and install `ttsfrd` package for better text normalization performance.
+Optionally, you can unzip `ttsfrd` resource and install `ttsfrd` package for better text normalization performance.
 
-Notice that this step is not necessary. If you do not install `ttsfrd` package, we will use WeTextProcessing by default.
+Notice that this step is not necessary. If you do not install `ttsfrd` package, we will use wetext by default.
 
 ``` sh
 cd pretrained_models/CosyVoice-ttsfrd/
@@ -113,10 +124,10 @@ pip install ttsfrd_dependency-0.1-py3-none-any.whl
 pip install ttsfrd-0.4.2-cp310-cp310-linux_x86_64.whl
 ```
 
-**Basic Usage**
+### Basic Usage
 
 We strongly recommend using `CosyVoice2-0.5B` for better performance.
-Follow code below for detailed usage of each model.
+Follow the code below for detailed usage of each model.
 
 ``` python
 import sys
@@ -126,15 +137,21 @@ from cosyvoice.utils.file_utils import load_wav
 import torchaudio
 ```
 
-**CosyVoice2 Usage**
+#### CosyVoice2 Usage
 ```python
-cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=False, fp16=False)
+cosyvoice = CosyVoice2('pretrained_models/CosyVoice2-0.5B', load_jit=False, load_trt=False, load_vllm=False, fp16=False)
 
 # NOTE if you want to reproduce the results on https://funaudiollm.github.io/cosyvoice2, please add text_frontend=False during inference
 # zero_shot usage
 prompt_speech_16k = load_wav('./asset/zero_shot_prompt.wav', 16000)
 for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '希望你以后能够做的比我还好呦。', prompt_speech_16k, stream=False)):
     torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
+
+# save zero_shot spk for future usage
+assert cosyvoice.add_zero_shot_spk('希望你以后能够做的比我还好呦。', prompt_speech_16k, 'my_zero_shot_spk') is True
+for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '', '', zero_shot_spk_id='my_zero_shot_spk', stream=False)):
+    torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
+cosyvoice.save_spkinfo()
 
 # fine grained control, for supported control, check cosyvoice/tokenizer/tokenizer.py#L248
 for i, j in enumerate(cosyvoice.inference_cross_lingual('在他讲述那个荒诞故事的过程中，他突然[laughter]停下来，因为他自己也被逗笑了[laughter]。', prompt_speech_16k, stream=False)):
@@ -155,7 +172,19 @@ for i, j in enumerate(cosyvoice.inference_zero_shot(text_generator(), '希望你
     torchaudio.save('zero_shot_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
 ```
 
-**CosyVoice Usage**
+#### CosyVoice2 vllm Usage
+If you want to use vllm for inference, please install `vllm==v0.9.0`. Older vllm version do not support CosyVoice2 inference.
+
+Notice that `vllm==v0.9.0` has a lot of specific requirements, for example `torch==2.7.0`. You can create a new env to in case your hardward do not support vllm and old env is corrupted.
+
+``` sh
+conda create -n cosyvoice_vllm --clone cosyvoice
+conda activate cosyvoice_vllm
+pip install vllm==v0.9.0 transformers==4.51.3 -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
+python vllm_example.py
+```
+
+#### CosyVoice Usage
 ```python
 cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M-SFT', load_jit=False, load_trt=False, fp16=False)
 # sft usage
@@ -164,7 +193,7 @@ print(cosyvoice.list_available_spks())
 for i, j in enumerate(cosyvoice.inference_sft('你好，我是通义生成式语音大模型，请问有什么可以帮您的吗？', '中文女', stream=False)):
     torchaudio.save('sft_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
 
-cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M') # or change to pretrained_models/CosyVoice-300M-25Hz for 25Hz inference
+cosyvoice = CosyVoice('pretrained_models/CosyVoice-300M')
 # zero_shot usage, <|zh|><|en|><|jp|><|yue|><|ko|> for Chinese/English/Japanese/Cantonese/Korean
 prompt_speech_16k = load_wav('./asset/zero_shot_prompt.wav', 16000)
 for i, j in enumerate(cosyvoice.inference_zero_shot('收到好友从远方寄来的生日礼物，那份意外的惊喜与深深的祝福让我心中充满了甜蜜的快乐，笑容如花儿般绽放。', '希望你以后能够做的比我还好呦。', prompt_speech_16k, stream=False)):
@@ -185,7 +214,7 @@ for i, j in enumerate(cosyvoice.inference_instruct('在面对挑战时，他展�
     torchaudio.save('instruct_{}.wav'.format(i), j['tts_speech'], cosyvoice.sample_rate)
 ```
 
-**Start web demo**
+#### Start web demo
 
 You can use our web demo page to get familiar with CosyVoice quickly.
 
@@ -196,14 +225,14 @@ Please see the demo website for details.
 python3 webui.py --port 50000 --model_dir pretrained_models/CosyVoice-300M
 ```
 
-**Advanced Usage**
+#### Advanced Usage
 
-For advanced user, we have provided train and inference scripts in `examples/libritts/cosyvoice/run.sh`.
+For advanced users, we have provided training and inference scripts in `examples/libritts/cosyvoice/run.sh`.
 
-**Build for deployment**
+#### Build for deployment
 
 Optionally, if you want service deployment,
-you can run following steps.
+You can run the following steps.
 
 ``` sh
 cd runtime/python
@@ -216,6 +245,17 @@ cd grpc && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|in
 docker run -d --runtime=nvidia -p 50000:50000 cosyvoice:v1.0 /bin/bash -c "cd /opt/CosyVoice/CosyVoice/runtime/python/fastapi && python3 server.py --port 50000 --model_dir iic/CosyVoice-300M && sleep infinity"
 cd fastapi && python3 client.py --port 50000 --mode <sft|zero_shot|cross_lingual|instruct>
 ```
+
+#### Using Nvidia TensorRT-LLM for deployment
+
+Using TensorRT-LLM to accelerate cosyvoice2 llm could give 4x acceleration comparing with huggingface transformers implementation.
+To quick start:
+
+``` sh
+cd runtime/triton_trtllm
+docker compose up -d
+```
+For more details, you could check [here](https://github.com/FunAudioLLM/CosyVoice/tree/main/runtime/triton_trtllm)
 
 ## Discussion & Communication
 
@@ -232,6 +272,40 @@ You can also scan the QR code to join our official Dingding chat group.
 3. We borrowed a lot of code from [Matcha-TTS](https://github.com/shivammehta25/Matcha-TTS).
 4. We borrowed a lot of code from [AcademiCodec](https://github.com/yangdongchao/AcademiCodec).
 5. We borrowed a lot of code from [WeNet](https://github.com/wenet-e2e/wenet).
+
+## Citations
+
+``` bibtex
+@article{du2024cosyvoice,
+  title={Cosyvoice: A scalable multilingual zero-shot text-to-speech synthesizer based on supervised semantic tokens},
+  author={Du, Zhihao and Chen, Qian and Zhang, Shiliang and Hu, Kai and Lu, Heng and Yang, Yexin and Hu, Hangrui and Zheng, Siqi and Gu, Yue and Ma, Ziyang and others},
+  journal={arXiv preprint arXiv:2407.05407},
+  year={2024}
+}
+
+@article{du2024cosyvoice,
+  title={Cosyvoice 2: Scalable streaming speech synthesis with large language models},
+  author={Du, Zhihao and Wang, Yuxuan and Chen, Qian and Shi, Xian and Lv, Xiang and Zhao, Tianyu and Gao, Zhifu and Yang, Yexin and Gao, Changfeng and Wang, Hui and others},
+  journal={arXiv preprint arXiv:2412.10117},
+  year={2024}
+}
+
+@article{du2025cosyvoice,
+  title={CosyVoice 3: Towards In-the-wild Speech Generation via Scaling-up and Post-training},
+  author={Du, Zhihao and Gao, Changfeng and Wang, Yuxuan and Yu, Fan and Zhao, Tianyu and Wang, Hao and Lv, Xiang and Wang, Hui and Shi, Xian and An, Keyu and others},
+  journal={arXiv preprint arXiv:2505.17589},
+  year={2025}
+}
+
+@inproceedings{lyu2025build,
+  title={Build LLM-Based Zero-Shot Streaming TTS System with Cosyvoice},
+  author={Lyu, Xiang and Wang, Yuxuan and Zhao, Tianyu and Wang, Hao and Liu, Huadai and Du, Zhihao},
+  booktitle={ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+  pages={1--2},
+  year={2025},
+  organization={IEEE}
+}
+```
 
 ## Disclaimer
 The content provided above is for academic purposes only and is intended to demonstrate technical capabilities. Some examples are sourced from the internet. If any content infringes on your rights, please contact us to request its removal.
