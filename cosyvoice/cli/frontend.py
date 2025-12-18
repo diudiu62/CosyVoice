@@ -115,11 +115,23 @@ class CosyVoiceFrontEnd:
         return embedding
 
     def _extract_speech_feat(self, prompt_wav):
-        speech = load_wav(prompt_wav, 24000)
+        # 检查 prompt_wav 是否已经是张量（预加载的音频）
+        if isinstance(prompt_wav, torch.Tensor):
+            speech = prompt_wav
+            # 如果需要，重采样到 24000
+            if speech.shape[0] == 1:  # 检查是否为单声道
+                current_sr = 22050  # 从变量名 prompt_speech_22050 推断
+                if current_sr != 24000:
+                    speech = torchaudio.transforms.Resample(orig_freq=current_sr, new_freq=24000)(speech)
+        else:
+            # 是文件路径，正常加载
+            speech = load_wav(prompt_wav, 24000)
+        
         speech_feat = self.feat_extractor(speech).squeeze(dim=0).transpose(0, 1).to(self.device)
         speech_feat = speech_feat.unsqueeze(dim=0)
         speech_feat_len = torch.tensor([speech_feat.shape[1]], dtype=torch.int32).to(self.device)
         return speech_feat, speech_feat_len
+
 
     def text_normalize(self, text, split=True, text_frontend=True):
         if isinstance(text, Generator):
