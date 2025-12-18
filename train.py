@@ -27,9 +27,9 @@ class Trainer(CosyVoiceFrontEnd):
 
   def __init__(self,model_dir):
     instruct = False
-    print('{}/cosyvoice.yaml'.format(model_dir))
+    print('{}/cosyvoice3.yaml'.format(model_dir))
     self.model_dir= model_dir
-    with open('{}/cosyvoice.yaml'.format(model_dir), 'r') as f:
+    with open('{}/cosyvoice3.yaml'.format(model_dir), 'r') as f:
       configs = load_hyperpyyaml(f, overrides={'qwen_pretrain_path': os.path.join(model_dir, 'CosyVoice-BlankEN')})
     super().__init__(configs['get_tokenizer'],
                                           configs['feat_extractor'],
