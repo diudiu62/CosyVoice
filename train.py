@@ -34,7 +34,7 @@ class Trainer(CosyVoiceFrontEnd):
     super().__init__(configs['get_tokenizer'],
                                           configs['feat_extractor'],
                                           '{}/campplus.onnx'.format(model_dir),
-                                          '{}/speech_tokenizer_v2.onnx'.format(model_dir),
+                                          '{}/speech_tokenizer_v3.onnx'.format(model_dir),
                                           '{}/spk2info.pt'.format(model_dir),
                                           configs['allowed_special'])
 
