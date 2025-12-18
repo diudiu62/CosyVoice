@@ -170,7 +170,7 @@ if __name__ == '__main__':
                         default='pretrained_models/Fun-CosyVoice3-0.5B',
                         help='local path or modelscope repo id')
     args = parser.parse_args()
-    cosyvoice = AutoModel(model_dir=args.model_dir, load_trt=False, load_vllm=False, fp16=False)
+    cosyvoice = AutoModel(model_dir=args.model_dir, load_trt=True, load_vllm=True, fp16=False)
 
     sft_spk = cosyvoice.list_available_spks()
     if len(sft_spk) == 0:
