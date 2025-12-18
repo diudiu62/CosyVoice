@@ -90,7 +90,18 @@ class CosyVoiceFrontEnd:
                 yield text_token[:, i: i + 1]
 
     def _extract_speech_token(self, prompt_wav):
-        speech = load_wav(prompt_wav, 16000)
+        # 检查 prompt_wav 是否已经是张量（预加载的音频）
+        if isinstance(prompt_wav, torch.Tensor):
+            speech = prompt_wav
+            # 如果需要，重采样到 16000
+            if speech.shape[0] == 1:  # 检查是否为单声道
+                current_sr = 16000  # 从变量名 prompt_speech_16k 推断
+                if current_sr != 16000:
+                    speech = torchaudio.transforms.Resample(orig_freq=current_sr, new_freq=16000)(speech)
+        else:
+            # 是文件路径，正常加载
+            speech = load_wav(prompt_wav, 16000)
+        
         assert speech.shape[1] / 16000 <= 30, 'do not support extract speech token for audio longer than 30s'
         feat = whisper.log_mel_spectrogram(speech, n_mels=128)
         speech_token = self.speech_tokenizer_session.run(None,
@@ -103,7 +114,18 @@ class CosyVoiceFrontEnd:
         return speech_token, speech_token_len
 
     def _extract_spk_embedding(self, prompt_wav):
-        speech = load_wav(prompt_wav, 16000)
+        # 检查 prompt_wav 是否已经是张量（预加载的音频）
+        if isinstance(prompt_wav, torch.Tensor):
+            speech = prompt_wav
+            # 如果需要，重采样到 16000
+            if speech.shape[0] == 1:  # 检查是否为单声道
+                current_sr = 16000  # 从变量名 prompt_speech_16k 推断
+                if current_sr != 16000:
+                    speech = torchaudio.transforms.Resample(orig_freq=current_sr, new_freq=16000)(speech)
+        else:
+            # 是文件路径，正常加载
+            speech = load_wav(prompt_wav, 16000)
+        
         feat = kaldi.fbank(speech,
                            num_mel_bins=80,
                            dither=0,
@@ -113,6 +135,7 @@ class CosyVoiceFrontEnd:
                                               {self.campplus_session.get_inputs()[0].name: feat.unsqueeze(dim=0).cpu().numpy()})[0].flatten().tolist()
         embedding = torch.tensor([embedding]).to(self.device)
         return embedding
+
 
     def _extract_speech_feat(self, prompt_wav):
         # 检查 prompt_wav 是否已经是张量（预加载的音频）
